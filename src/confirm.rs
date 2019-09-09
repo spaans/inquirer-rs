@@ -1,5 +1,10 @@
 use std::io::{Write, stdout, stdin};
-use termion::{TermRead, TermWrite, IntoRawMode, color, Key};
+
+use termion::color;
+use termion::event::Key;
+use termion::input::TermRead;  // for stdin.keys()
+use termion::raw::IntoRawMode;
+use termion::style;
 
 use error::Error;
 
@@ -33,9 +38,9 @@ pub fn confirm(prompt: &str, default: bool) -> Result<bool, Error> {
     let stdin = stdin();
     let mut stdout = try!(stdout().into_raw_mode());
 
-    try!(stdout.color(color::Green));
+    print!("{}", color::Fg(color::Green));
     print!("[?] ");
-    try!(stdout.reset());
+    print!("{}", style::Reset);
     print!("{} ", prompt);
     let (y, n) = if default {
         ('Y', 'n')

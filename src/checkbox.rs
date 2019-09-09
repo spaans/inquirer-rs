@@ -1,5 +1,12 @@
 use std::io::{Write, stdout, stdin};
-use termion::{TermRead, TermWrite, IntoRawMode, color, Style, Key};
+
+use termion::clear;
+use termion::color;
+use termion::cursor;
+use termion::event::Key;
+use termion::input::TermRead;  // for stdin.keys()
+use termion::raw::IntoRawMode;
+use termion::style;
 
 use choice::Choice;
 use error::Error;
@@ -52,12 +59,13 @@ pub fn checkbox<'c, C, V>(prompt: &str, choices: &'c [C]) -> Result<Vec<&'c V>, 
     where C: Choice<Value = V>
 {
     let stdin = stdin();
-    let mut stdout = try!(stdout().into_raw_mode());
-    try!(stdout.hide_cursor());
+    let mut stdout = stdout();
+    let termion_stdout = stdout.lock().into_raw_mode().unwrap();
+    print!("{}", cursor::Hide);
 
-    try!(stdout.color(color::Green));
+    print!("{}", color::Fg(color::Green));
     print!("[?] ");
-    try!(stdout.reset());
+    print!("{}", style::Reset);
     println!("{} (Press <space> to select)", prompt);
 
     let mut selected: Vec<_> = (0..choices.len()).map(|_| false).collect();
@@ -71,31 +79,30 @@ pub fn checkbox<'c, C, V>(prompt: &str, choices: &'c [C]) -> Result<Vec<&'c V>, 
     let mut input = stdin.keys();
 
     loop {
-        try!(stdout.move_cursor_up(choices.len() as u32));
+        print!("{}", cursor::Up(choices.len() as u16));
+
         for (i, s) in choices.iter().enumerate() {
             print!("\n\r");
-            try!(stdout.clear_line());
+            print!("{}", clear::CurrentLine);
 
             if cur == i {
-                try!(stdout.style(Style::Bold));
+                print!("{}", style::Bold);
                 print!(" > ");
             } else {
                 print!("   ");
             }
 
             if selected[i] {
-                try!(stdout.style(Style::Bold));
+                print!("{}", style::Bold);
                 print!("● {}", s.text());
-                try!(stdout.reset());
+                print!("{}", style::Reset);
             } else {
                 print!("○ {}", s.text());
             }
 
-            try!(stdout.reset());
-
+            print!("{}", style::Reset);
         }
-
-        try!(stdout.lock().flush());
+        stdout.lock().flush().unwrap();
 
         let next = try!(input.next().ok_or_else(|| Error::NoMoreInput));
 
@@ -113,7 +120,7 @@ pub fn checkbox<'c, C, V>(prompt: &str, choices: &'c [C]) -> Result<Vec<&'c V>, 
             Key::Char(' ') => selected[cur] = !selected[cur],
             Key::Ctrl('c') => {
                 print!("\n\r");
-                try!(stdout.show_cursor());
+                print!("{}", cursor::Show);
                 return Err(Error::UserAborted);
             }
             _ => {
@@ -123,7 +130,7 @@ pub fn checkbox<'c, C, V>(prompt: &str, choices: &'c [C]) -> Result<Vec<&'c V>, 
     }
 
     print!("\n\r");
-    try!(stdout.show_cursor());
+    print!("{}", cursor::Show);
 
     Ok(choices.iter()
         .zip(selected.iter())

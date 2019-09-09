@@ -12,13 +12,14 @@ quick_error! {
             description(err.description())
         }
         /// Input read error
-        // `std::io::CharsError` is unstable!
-        Chars(err: io::CharsError) {
-            from()
-            cause(err)
-            display("Chars error")
-            description(err.description())
-        }
+        // Not handled separately at the moment, as redox-`std::io::CharsError` is still unstable after 3 years
+//        Chars(err: io::CharsError) {
+//            from()
+//            cause(err)
+//            display("Chars error")
+//            description(err.description())
+//        }
+
         /// Invalid choice
         // TODO: Make this a type system error instead
         InvalidChoice(option_num: usize) {
